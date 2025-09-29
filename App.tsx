@@ -478,22 +478,17 @@ const App: React.FC = () => {
             </ReactCrop>
         );
     } else if (activeTab === 'expand' && currentImageUrl && originalAspect) {
-        const rawAspectValue = expandAspect ?? originalAspect;
-        const aspectValue = Number(rawAspectValue.toFixed(4));
-        const maxHeightValue = '60vh';
         const containerStyle: React.CSSProperties = {
-            aspectRatio: `${aspectValue}`,
-            maxHeight: maxHeightValue,
-            width: `min(100%, calc(${maxHeightValue} * ${aspectValue}))`,
+            aspectRatio: expandAspect ? `${expandAspect}` : `${originalAspect}`,
         };
         mainDisplay = (
-            <div className="bg-grid-pattern flex items-center justify-center rounded-xl transition-all duration-300 mx-auto" style={containerStyle}>
+            <div className="w-full bg-grid-pattern flex items-center justify-center max-h-[60vh] rounded-xl transition-all duration-300" style={containerStyle}>
                  <img
                     ref={imgRef}
                     key={currentImageUrl}
                     src={currentImageUrl}
                     alt="Current to expand"
-                    className="rounded-xl object-contain w-full h-full"
+                    className="rounded-xl object-contain max-w-full max-h-full"
                 />
             </div>
         );
