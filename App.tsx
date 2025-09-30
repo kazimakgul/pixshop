@@ -245,6 +245,7 @@ const App: React.FC = () => {
     try {
         const image = imgRef.current;
         const canvas = document.createElement('canvas');
+        const maskCanvas = document.createElement('canvas');
         
         const originalWidth = image.naturalWidth;
         const originalHeight = image.naturalHeight;
@@ -277,17 +278,27 @@ const App: React.FC = () => {
 
         canvas.width = newWidth;
         canvas.height = newHeight;
+        maskCanvas.width = newWidth;
+        maskCanvas.height = newHeight;
         const ctx = canvas.getContext('2d');
-        if (!ctx) throw new Error("Could not get canvas context");
+        const maskCtx = maskCanvas.getContext('2d');
+        if (!ctx || !maskCtx) throw new Error("Could not get canvas contexts");
         
         const offsetX = (newWidth - originalWidth) / 2;
         const offsetY = (newHeight - originalHeight) / 2;
         ctx.drawImage(image, offsetX, offsetY);
 
-        const canvasWithTransparencyUrl = canvas.toDataURL('image/png');
-        const imageForApi = dataURLtoFile(canvasWithTransparencyUrl, `expand-base-${Date.now()}.png`);
+        maskCtx.fillStyle = '#ffffff';
+        maskCtx.fillRect(0, 0, newWidth, newHeight);
+        maskCtx.fillStyle = '#000000';
+        maskCtx.fillRect(offsetX, offsetY, originalWidth, originalHeight);
 
-        const expandedImageUrl = await generateExpandedImage(imageForApi, expandPrompt);
+        const canvasWithTransparencyUrl = canvas.toDataURL('image/png');
+        const maskUrl = maskCanvas.toDataURL('image/png');
+        const imageForApi = dataURLtoFile(canvasWithTransparencyUrl, `expand-base-${Date.now()}.png`);
+        const maskForApi = dataURLtoFile(maskUrl, `expand-mask-${Date.now()}.png`);
+
+        const expandedImageUrl = await generateExpandedImage(imageForApi, maskForApi, expandPrompt);
         const newImageFile = dataURLtoFile(expandedImageUrl, `expanded-${Date.now()}.png`);
         addImageToHistory(newImageFile);
 

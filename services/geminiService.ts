@@ -184,32 +184,37 @@ Output: Return ONLY the final adjusted image. Do not return text.`;
  */
 export const generateExpandedImage = async (
     originalImage: File,
+    maskImage: File,
     userPrompt: string,
 ): Promise<string> => {
     console.log(`Starting generative fill/expand: ${userPrompt}`);
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
     
     const originalImagePart = await fileToPart(originalImage);
-    const prompt = `You are an expert photo editor AI specializing in outpainting and generative fill. The user has provided an image with transparent areas which they want to fill. Your task is to intelligently fill these areas to create a larger, seamless composition.
+    const maskPart = await fileToPart(maskImage);
+    const prompt = `You are an expert photo editor AI specializing in outpainting and generative fill. You will receive two aligned images:
 
-**CRITICAL INSTRUCTION: Your absolute top priority is to make the transition between the original image and the newly generated areas completely invisible and seamless. There must be no visible lines, seams, or abrupt changes in texture, lighting, or color. The final image should look like it was taken as a single, original photograph.**
+1.  A base image that contains the original photo centered on a transparent canvas. The transparent regions mark where new content must be generated.
+2.  A binary mask image where **white pixels represent the regions that require new generated content** and **black pixels represent the untouched original image**.
 
-Instructions:
-1.  **Analyze Content at the Edges**: Carefully examine the original image's style, lighting, shadows, textures, and subject matter, paying special attention to the boundaries.
-2.  **Perfect Boundary Matching**: Ensure the pixels in the generated area perfectly match the color, brightness, and texture of the adjacent pixels in the original image to eliminate any visible seam.
-3.  **Complete Cut-off Objects Perfectly**: Pay extremely close attention to any subjects, people, or patterns that are partially visible at the edges of the original content. You must complete these elements realistically and logically. For example, if half a car is visible, generate the other half. If a person's arm is cut off, complete the arm and hand in a natural pose.
-4.  **Logical Scene Extension**: Generate new content in the transparent areas that logically extends the original scene. The new content must be consistent with the context of the photo.
-5.  **Follow User Guidance**: If the user has provided a prompt, use it as strong guidance for the content of the filled areas. User prompt: "${userPrompt}"
-6.  **Handle Empty Prompts**: If the user prompt is empty, just extend the image contextually and realistically based on your analysis of the original content.
-7.  **Final Output**: The final output must be a single, complete, photorealistic image with no transparency.
+**CRITICAL INSTRUCTIONS:**
+- Seamlessly extend the scene so the transition between original and generated areas is invisible. Match lighting, color, noise, and texture perfectly.
+- NEVER leave the generated regions as flat colors, dark bands, or black/blank space. They must contain realistic, context-aware detail.
+
+Detailed Guidance:
+1.  **Analyze Edge Context**: Study the content adjacent to the transparent/masked regions to understand what needs to continue.
+2.  **Complete Partial Subjects**: If people, objects, or patterns are cut off, finish them naturally and convincingly.
+3.  **Use User Direction**: Incorporate the user's guidance if provided. User prompt: "${userPrompt}"
+4.  **Empty Prompt Handling**: If no prompt is supplied, intelligently infer how the scene should continue.
+5.  **Final Output**: Produce a single photorealistic image with no transparency, no visible seams, and no solid-color filler.
 
 Output: Return ONLY the final edited image. Do not return text.`;
     const textPart = { text: prompt };
 
-    console.log('Sending image with transparent areas to the model...');
+    console.log('Sending image and mask with transparent areas to the model...');
     const response: GenerateContentResponse = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image-preview',
-        contents: { parts: [originalImagePart, textPart] },
+        contents: { parts: [originalImagePart, maskPart, textPart] },
     });
     console.log('Received response from model for expansion.', response);
     
