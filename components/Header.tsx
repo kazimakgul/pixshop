@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 import React from 'react';
+import { FEATURE_TABS, type FeatureTab } from '../types';
+
+interface HeaderProps {
+  activeTab: FeatureTab;
+  onTabChange: (tab: FeatureTab) => void;
+}
 
 const SparkleIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -10,14 +16,34 @@ const SparkleIcon: React.FC<{ className?: string }> = ({ className }) => (
   </svg>
 );
 
-const Header: React.FC = () => {
+const Header: React.FC<HeaderProps> = ({ activeTab, onTabChange }) => {
   return (
     <header className="w-full py-4 px-8 border-b border-gray-700 bg-gray-800/30 backdrop-blur-sm sticky top-0 z-50">
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center justify-center gap-3">
           <SparkleIcon className="w-6 h-6 text-blue-400" />
           <h1 className="text-xl font-bold tracking-tight text-gray-100">
             Pixshop
           </h1>
+        </div>
+        <label className="flex items-center justify-center gap-2 text-sm text-gray-300 md:justify-end">
+          <span className="font-medium">Feature</span>
+          <select
+            value={activeTab}
+            onChange={(event) => onTabChange(event.target.value as FeatureTab)}
+            className="bg-gray-900/80 border border-gray-700 text-gray-100 rounded-md py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Select editing feature"
+          >
+            {FEATURE_TABS.map((tab) => {
+              const label = tab.charAt(0).toUpperCase() + tab.slice(1);
+              return (
+                <option key={tab} value={tab}>
+                  {label}
+                </option>
+              );
+            })}
+          </select>
+        </label>
       </div>
     </header>
   );
