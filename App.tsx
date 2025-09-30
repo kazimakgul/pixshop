@@ -542,6 +542,22 @@ const App: React.FC = () => {
             )}
         </div>
         
+        <div className="w-full bg-gray-800/80 border border-gray-700/80 rounded-lg p-2 flex items-center gap-2 backdrop-blur-sm overflow-x-auto hide-scrollbar md:justify-center">
+            {(['retouch', 'crop', 'expand', 'insert', 'adjust', 'filters'] as Tab[]).map(tab => (
+                 <button
+                    key={tab}
+                    onClick={() => handleTabClick(tab)}
+                    className={`flex-shrink-0 capitalize font-semibold py-3 px-5 rounded-md transition-all duration-200 text-base ${
+                        activeTab === tab 
+                        ? 'bg-gradient-to-br from-blue-500 to-cyan-400 text-white shadow-lg shadow-cyan-500/40' 
+                        : 'text-gray-300 hover:text-white hover:bg-white/10'
+                    }`}
+                >
+                    {tab}
+                </button>
+            ))}
+        </div>
+        
         <div className="w-full">
             {activeTab === 'retouch' && (
                 <div className="flex flex-col items-center gap-4">
@@ -647,7 +663,7 @@ const App: React.FC = () => {
   
   return (
     <div className="min-h-screen text-gray-100 flex flex-col">
-      <Header activeTab={activeTab} onSelectTab={handleTabClick} />
+      <Header />
       <main className={`flex-grow w-full max-w-[1600px] mx-auto p-4 md:p-8 flex justify-center ${currentImage ? 'items-start' : 'items-center'}`}>
         {renderContent()}
       </main>
