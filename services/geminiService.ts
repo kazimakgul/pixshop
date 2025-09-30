@@ -177,52 +177,6 @@ Output: Return ONLY the final adjusted image. Do not return text.`;
 };
 
 /**
- * Removes the background from an image, replacing it with transparency or a solid color.
- * @param originalImage The image file to process.
- * @param backgroundType Whether to make the background transparent or a solid color.
- * @param backgroundColor The hex code for the solid color background, if applicable.
- * @returns A promise that resolves to the data URL of the image with the background removed.
- */
-export const generateRemovedBackgroundImage = async (
-    originalImage: File,
-    backgroundType: 'transparent' | 'color',
-    backgroundColor?: string,
-): Promise<string> => {
-    console.log(`Starting background removal. Type: ${backgroundType}, Color: ${backgroundColor}`);
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
-
-    const originalImagePart = await fileToPart(originalImage);
-
-    let instruction: string;
-    if (backgroundType === 'transparent') {
-        instruction = 'Replace the background with transparency. The output MUST be a PNG image with an alpha channel.';
-    } else {
-        instruction = `Replace the background with a solid ${backgroundColor} color.`;
-    }
-
-    const prompt = `You are an expert photo editor AI. Your task is to precisely identify the main subject(s) in the image and remove the background.
-
-**CRITICAL INSTRUCTIONS:**
-1.  **Identify Subject**: Accurately identify the primary subject(s) of the photo.
-2.  **Precise Cutout**: Create a clean, highly-detailed, and accurate cutout mask for the subject(s). Pay extremely close attention to fine details like hair, fur, and semi-transparent edges.
-3.  **Background Replacement**: ${instruction}
-4.  **Preserve Subject**: The subject(s) themselves must remain completely unchanged. Do not alter their appearance, color, lighting, or any other attribute.
-
-Output: Return ONLY the final edited image. Do not return text.`;
-
-    const textPart = { text: prompt };
-
-    console.log('Sending image and background removal prompt to the model...');
-    const response: GenerateContentResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image-preview',
-        contents: { parts: [originalImagePart, textPart] },
-    });
-    console.log('Received response from model for background removal.', response);
-
-    return handleApiResponse(response, 'background removal');
-};
-
-/**
  * Fills transparent areas of an image using generative AI (outpainting).
  * @param originalImage The image file with transparent areas to fill.
  * @param userPrompt An optional text prompt to guide the fill content.

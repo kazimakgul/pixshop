@@ -6,7 +6,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactCrop, { type Crop, type PixelCrop } from 'react-image-crop';
-import { generateEditedImage, generateFilteredImage, generateAdjustedImage, generateRemovedBackgroundImage, generateExpandedImage, generateCompositedImage } from './services/geminiService';
+import { generateEditedImage, generateFilteredImage, generateAdjustedImage, generateExpandedImage, generateCompositedImage } from './services/geminiService';
 import Header from './components/Header';
 import Spinner from './components/Spinner';
 import FilterPanel from './components/FilterPanel';
@@ -14,7 +14,6 @@ import AdjustmentPanel from './components/AdjustmentPanel';
 import CropPanel from './components/CropPanel';
 import ExpandPanel from './components/ExpandPanel';
 import InsertPanel from './components/InsertPanel';
-import RemoveBackgroundPanel from './components/RemoveBackgroundPanel';
 import { UndoIcon, RedoIcon, EyeIcon } from './components/icons';
 import StartScreen from './components/StartScreen';
 
@@ -35,7 +34,7 @@ const dataURLtoFile = (dataurl: string, filename: string): File => {
     return new File([u8arr], filename, {type:mime});
 }
 
-type Tab = 'retouch' | 'adjust' | 'filters' | 'crop' | 'expand' | 'insert' | 'remove-bg';
+type Tab = 'retouch' | 'adjust' | 'filters' | 'crop' | 'expand' | 'insert';
 
 const App: React.FC = () => {
   const [history, setHistory] = useState<File[]>([]);
@@ -185,28 +184,6 @@ const App: React.FC = () => {
     } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
         setError(`Failed to apply the adjustment. ${errorMessage}`);
-        console.error(err);
-    } finally {
-        setIsLoading(false);
-    }
-  }, [currentImage, addImageToHistory]);
-
-  const handleApplyRemoveBackground = useCallback(async (type: 'transparent' | 'color', color?: string) => {
-    if (!currentImage) {
-      setError('No image loaded to remove the background from.');
-      return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-        const resultImageUrl = await generateRemovedBackgroundImage(currentImage, type, color);
-        const newImageFile = dataURLtoFile(resultImageUrl, `removed-bg-${Date.now()}.png`);
-        addImageToHistory(newImageFile);
-    } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
-        setError(`Failed to remove the background. ${errorMessage}`);
         console.error(err);
     } finally {
         setIsLoading(false);
@@ -501,17 +478,22 @@ const App: React.FC = () => {
             </ReactCrop>
         );
     } else if (activeTab === 'expand' && currentImageUrl && originalAspect) {
+        const rawAspectValue = expandAspect ?? originalAspect;
+        const aspectValue = Number(rawAspectValue.toFixed(4));
+        const maxHeightValue = '60vh';
         const containerStyle: React.CSSProperties = {
-            aspectRatio: expandAspect ? `${expandAspect}` : `${originalAspect}`,
+            aspectRatio: `${aspectValue}`,
+            maxHeight: maxHeightValue,
+            width: `min(100%, calc(${maxHeightValue} * ${aspectValue}))`,
         };
         mainDisplay = (
-            <div className="w-full bg-grid-pattern flex items-center justify-center max-h-[60vh] rounded-xl transition-all duration-300" style={containerStyle}>
+            <div className="bg-grid-pattern flex items-center justify-center rounded-xl transition-all duration-300 mx-auto" style={containerStyle}>
                  <img
                     ref={imgRef}
                     key={currentImageUrl}
                     src={currentImageUrl}
                     alt="Current to expand"
-                    className="rounded-xl object-contain max-w-full max-h-full"
+                    className="rounded-xl object-contain w-full h-full"
                 />
             </div>
         );
@@ -594,7 +576,6 @@ const App: React.FC = () => {
                     insertImage={insertImage}
                 />
             }
-            {activeTab === 'remove-bg' && <RemoveBackgroundPanel onApplyRemoveBackground={handleApplyRemoveBackground} isLoading={isLoading} />}
             {activeTab === 'adjust' && <AdjustmentPanel onApplyAdjustment={handleApplyAdjustment} isLoading={isLoading} />}
             {activeTab === 'filters' && <FilterPanel onApplyFilter={handleApplyFilter} isLoading={isLoading} />}
         </div>
